@@ -58,24 +58,42 @@ public:
                      std::ios_base::seekdir dir,
                      p_void set, char * beg, char * cur, char * end )
   {
-      switch( dir )
+    switch( dir )
+    {
+      case std::ios_base::beg:
       {
-        case std::ios_base::beg:
-          ( this->*set )( beg, beg + off, end );
-          return true;
+        if ( off < 0 ||
+             std::distance( beg, end ) < off )
+          return false;
 
-        case std::ios_base::cur:
-          ( this->*set )( beg, cur + off, end );
-          return true;
-
-        case std::ios_base::end:
-          ( this->*set )( beg, end + off, end );
-          return true;
-
-        default: break;
+        ( this->*set )( beg, beg + off, end );
       }
+        break;
 
-      return false;
+      case std::ios_base::cur:
+      {
+        if ( std::distance( cur, end ) < std::abs( off ) )
+          return false;
+
+        ( this->*set )( beg, cur + off, end );
+      }
+        break;
+
+      case std::ios_base::end:
+      {
+        if ( off > 0 ||
+             std::distance( beg, end ) < std::abs( off ) )
+          return false;
+
+        ( this->*set )( beg, end + off, end );
+      }
+        break;
+
+      default:
+        return false;
+    }
+
+    return true;
   }
 
   pos_type seekoff( off_type off,
@@ -178,6 +196,11 @@ int main()
   std::size_t p_pos = stream.tellp();
 
   stream.write( "123", 3 );
+
+  stream.seekp( 10, std::ios::beg );
+
+  g_pos = stream.tellg();
+  p_pos = stream.tellp();
 
   char b[254]{};
   stream.read( b, 3 );
